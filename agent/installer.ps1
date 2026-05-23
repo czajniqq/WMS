@@ -1,23 +1,17 @@
 #Requires -RunAsAdministrator
-<#
-.SYNOPSIS
-    Installs the Monitoring Agent as a Windows service.
-.DESCRIPTION
-    Checks for Python, installs dependencies, then creates and starts
-    the MonitoringAgent service using sc.exe or NSSM if available.
-#>
 
 $ServiceName = "MonitoringAgent"
 $AgentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$PythonExe = (Get-Command python -ErrorAction SilentlyContinue)?.Source
+
+$PythonCmd = Get-Command python -ErrorAction SilentlyContinue
+$PythonExe = if ($PythonCmd) { $PythonCmd.Source } else { $null }
 
 if (-not $PythonExe) {
-    Write-Error "Python not found in PATH. Please install Python 3.11+ and try again."
+    Write-Error "Python not found in PATH."
     exit 1
 }
 
 Write-Host "Python found at: $PythonExe"
-
 Write-Host "Installing dependencies..."
 & $PythonExe -m pip install -r "$AgentDir\requirements.txt" --quiet
 if ($LASTEXITCODE -ne 0) {
@@ -25,15 +19,30 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$NssmPath = (Get-Command nssm -ErrorAction SilentlyContinue)?.Source
+$NssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
+$NssmPath = if ($NssmCmd) { $NssmCmd.Source } else { $null }
+
+# NOWA SEKCJA: Zatrzymywanie i usuwanie usługi, jeśli już istnieje
+$existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+if ($existingService) {
+    Write-Host "[INFO] Usługa $ServiceName już istnieje. Następuje jej aktualizacja..."
+    Stop-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    
+    if ($NssmPath) {
+        & nssm remove $ServiceName confirm
+    } else {
+        sc.exe delete $ServiceName > $null
+    }
+    Write-Host "[INFO] Stara usługa została usunięta."
+    Start-Sleep -Seconds 2
+}
 
 if ($NssmPath) {
     Write-Host "Using NSSM to install service..."
     & nssm install $ServiceName $PythonExe "$AgentDir\main.py"
     & nssm set $ServiceName AppDirectory $AgentDir
     & nssm set $ServiceName Start SERVICE_AUTO_START
-    & nssm set $ServiceName AppStdout "$AgentDir\service_stdout.log"
-    & nssm set $ServiceName AppStderr "$AgentDir\service_stderr.log"
 } else {
     Write-Host "NSSM not found. Using sc.exe (basic service wrapper)..."
     $BinPath = "`"$PythonExe`" `"$AgentDir\main.py`""
@@ -54,4 +63,4 @@ if ($svc) {
     Write-Warning "Service created but could not query status."
 }
 
-Write-Host "Done. Monitor agent installed as '$ServiceName'."
+Write-Host "Done. Monitor agent installed and started successfully."

@@ -12,7 +12,15 @@ router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 def register_agent(payload: AgentRegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(Agent).filter(Agent.hostname == payload.hostname).first()
     if existing:
-        raise HTTPException(status_code=409, detail="Hostname already registered")
+        # Zamiast wyrzucać błąd 409, po prostu aktualizujemy IP i zwracamy istniejące ID
+        existing.ip_address = payload.ip_address
+        existing.agent_version = payload.agent_version
+        existing.last_seen = datetime.utcnow()
+        existing.status = "ONLINE"
+        db.commit()
+        db.refresh(existing)
+        return existing
+        
     agent = Agent(
         hostname=payload.hostname,
         ip_address=payload.ip_address,

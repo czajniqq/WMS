@@ -145,7 +145,7 @@ async function selectAgent(agentId, hostname) {
   const fromIso = new Date(now - 3600 * 1000).toISOString();
   const metrics = await fetchMetrics(agentId, fromIso, now.toISOString());
   destroyCharts();
-  initCharts('cpu-chart', 'ram-chart');
+  initCharts('cpu-chart', 'ram-chart', 'net-chart');
   updateCharts(metrics);
   document.getElementById('log-agent-select').value = agentId;
   fetchLogs(agentId, '', null, null);
