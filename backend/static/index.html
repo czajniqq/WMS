@@ -32,9 +32,9 @@
     </section>
 
     <!-- Agent Detail -->
-    <section class="card" id="agent-detail" style="display:none;">
+  <section class="card" id="agent-detail" style="display:none;">
       <h2 id="detail-hostname">Agent Detail</h2>
-      <div class="charts-row">
+      <div class="charts-row" style="grid-template-columns: 1fr 1fr 1fr;">
         <div class="chart-container">
           <h3>CPU %</h3>
           <canvas id="cpu-chart"></canvas>
@@ -42,6 +42,10 @@
         <div class="chart-container">
           <h3>RAM %</h3>
           <canvas id="ram-chart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Network (KB/s)</h3>
+          <canvas id="net-chart"></canvas>
         </div>
       </div>
     </section>
