@@ -34,19 +34,23 @@ def read_event_log(since: datetime, min_level: str = "WARNING") -> list:
                 events = win32evtlog.ReadEventLog(handle, flags, 0)
                 if not events:
                     break
+                
+                stop_reading = False
+                
                 for ev in events:
                     ts = ev.TimeGenerated
-                    if isinstance(ts, datetime):
-                        event_dt = ts
-                    else:
-                        event_dt = datetime(*ts[:6])
+                    event_dt = ts if isinstance(ts, datetime) else datetime(*ts[:6])
+                    
                     if event_dt < since:
-                        continue
+                        stop_reading = True
+                        break
+                    
                     ev_type = ev.EventType
                     level_str = event_type_map.get(ev_type, "INFORMATION")
                     level_num = level_map.get(level_str, 4)
                     if level_num > min_level_num:
                         continue
+                    
                     try:
                         msg = win32evtlogutil.SafeFormatMessage(ev, channel)
                     except Exception:
@@ -59,6 +63,10 @@ def read_event_log(since: datetime, min_level: str = "WARNING") -> list:
                         "event_id": ev.EventID & 0xFFFF,
                         "message": msg,
                     })
+                
+                if stop_reading:
+                    break
+                    
             win32evtlog.CloseEventLog(handle)
         except Exception:
             continue
