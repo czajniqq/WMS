@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.*
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PyInstaller
+*.spec
+dist/
+build/
+
+# Alembic
+backend/alembic/versions/*.py
+!backend/alembic/versions/__init__.py
+
+# Python cache
+__pycache__/
+*.pyc
