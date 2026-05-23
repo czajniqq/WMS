@@ -38,11 +38,40 @@ docs/           # Dokumentacja API i wdrożenia agenta
 
 ## Szybki start – Backend
 
-```bash
+Backend systemu został przygotowany w FastAPI. Odpowiada za rejestrację agentów, odbieranie heartbeatów, metryk, logów oraz obsługę alertów.
+
+### Instalacja zależności
+
+```powershell
+cd C:\repos\WMS
 cd backend
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+Jeżeli PowerShell blokuje aktywację środowiska:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+### Uruchomienie backendu
+
+Backend należy uruchamiać z katalogu głównego projektu:
+
+```powershell
+cd C:\repos\WMS
+.\backend\.venv\Scripts\Activate.ps1
+python -m uvicorn backend.main:app --reload
+```
+
+Dokumentacja API dostępna pod:
+
+```text
+http://127.0.0.1:8000/docs
+``````
 
 Dokumentacja API dostępna pod: http://localhost:8000/docs
 
