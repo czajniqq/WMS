@@ -8,11 +8,17 @@ from typing import List
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
-@router.post("/register", response_model=AgentRegisterResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=AgentRegisterResponse)
 def register_agent(payload: AgentRegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(Agent).filter(Agent.hostname == payload.hostname).first()
     if existing:
-        raise HTTPException(status_code=409, detail="Hostname already registered")
+        existing.ip_address = payload.ip_address
+        existing.agent_version = payload.agent_version
+        existing.last_seen = datetime.utcnow()
+        existing.status = "ONLINE"
+        db.commit()
+        db.refresh(existing)
+        return existing
     agent = Agent(
         hostname=payload.hostname,
         ip_address=payload.ip_address,

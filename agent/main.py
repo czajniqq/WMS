@@ -76,15 +76,16 @@ def main():
     hostname = socket.gethostname()
     ip = _get_local_ip()
 
-    for attempt in range(10):
+    attempt = 0
+    while True:
+        attempt += 1
         try:
             AGENT_ID = reporter.register(SERVER_URL, hostname, ip, AGENT_VERSION)
             break
         except Exception as exc:
-            logging.error("registration attempt %d failed: %s", attempt + 1, exc)
-            time.sleep(10)
-    else:
-        raise SystemExit("Could not register with backend after 10 attempts")
+            logging.error("registration attempt %d failed: %s", attempt, exc)
+            wait = min(30 * attempt, 300)
+            time.sleep(wait)
 
     schedule.every(HEARTBEAT_INTERVAL).seconds.do(send_heartbeat)
     schedule.every(METRICS_INTERVAL).seconds.do(collect_and_send_metrics)
