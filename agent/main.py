@@ -3,6 +3,7 @@ import logging
 import os
 import socket
 import time
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 import schedule
@@ -28,8 +29,13 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
 )
 
-AGENT_ID = None
-_last_log_collection = datetime.utcnow() - timedelta(seconds=LOGS_INTERVAL)
+
+@dataclass
+class AgentState:
+    agent_id: int
+    last_log_collection: datetime = field(
+        default_factory=lambda: datetime.utcnow() - timedelta(seconds=LOGS_INTERVAL)
+    )
 
 
 def _get_local_ip():
@@ -43,55 +49,55 @@ def _get_local_ip():
         return "127.0.0.1"
 
 
-def collect_and_send_metrics():
-    global AGENT_ID
+def collect_and_send_metrics(state: AgentState):
     try:
         data = collect_metrics()
-        reporter.submit_metrics(SERVER_URL, AGENT_ID, data)
+        reporter.submit_metrics(SERVER_URL, state.agent_id, data)
     except Exception as exc:
         logging.error("metrics error: %s", exc)
 
 
-def collect_and_send_logs():
-    global _last_log_collection
+def collect_and_send_logs(state: AgentState):
     try:
-        since = _last_log_collection
+        since = state.last_log_collection
         entries = read_event_log(since, MIN_LOG_LEVEL)
         if entries:
-            reporter.submit_logs(SERVER_URL, AGENT_ID, entries)
-        _last_log_collection = datetime.utcnow()
+            reporter.submit_logs(SERVER_URL, state.agent_id, entries)
+        state.last_log_collection = datetime.utcnow()
     except Exception as exc:
         logging.error("logs error: %s", exc)
 
 
-def send_heartbeat():
+def send_heartbeat(state: AgentState):
     try:
-        reporter.heartbeat(SERVER_URL, AGENT_ID)
+        reporter.heartbeat(SERVER_URL, state.agent_id)
     except Exception as exc:
         logging.error("heartbeat error: %s", exc)
 
 
 def main():
-    global AGENT_ID
     hostname = socket.gethostname()
     ip = _get_local_ip()
 
+    agent_id = None
     attempt = 0
     while True:
         attempt += 1
         try:
-            AGENT_ID = reporter.register(SERVER_URL, hostname, ip, AGENT_VERSION)
+            agent_id = reporter.register(SERVER_URL, hostname, ip, AGENT_VERSION)
             break
         except Exception as exc:
             logging.error("registration attempt %d failed: %s", attempt, exc)
             wait = min(30 * attempt, 300)
             time.sleep(wait)
 
-    schedule.every(HEARTBEAT_INTERVAL).seconds.do(send_heartbeat)
-    schedule.every(METRICS_INTERVAL).seconds.do(collect_and_send_metrics)
-    schedule.every(LOGS_INTERVAL).seconds.do(collect_and_send_logs)
+    state = AgentState(agent_id=agent_id)
 
-    collect_and_send_metrics()
+    schedule.every(HEARTBEAT_INTERVAL).seconds.do(send_heartbeat, state)
+    schedule.every(METRICS_INTERVAL).seconds.do(collect_and_send_metrics, state)
+    schedule.every(LOGS_INTERVAL).seconds.do(collect_and_send_logs, state)
+
+    collect_and_send_metrics(state)
 
     try:
         while True:
@@ -103,3 +109,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -23,7 +23,7 @@ def submit_logs(agent_id: int, payload: LogBatchRequest, db: Session = Depends(g
             source=e.source,
             event_id=e.event_id,
             message=e.message,
-            received_at=datetime.utcnow(),
+            received_at=datetime.now(timezone.utc),
         ))
         
         # Generowanie alertów z logów ERROR i CRITICAL
@@ -48,7 +48,7 @@ def get_logs(
     level: Optional[str] = Query(None),
     from_time: Optional[datetime] = Query(None),
     to_time: Optional[datetime] = Query(None),
-    limit: int = Query(100),
+    limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
     agent = db.query(Agent).filter(Agent.id == agent_id).first()

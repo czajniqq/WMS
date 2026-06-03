@@ -1,11 +1,21 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
+import ipaddress
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class AgentRegisterRequest(BaseModel):
     hostname: str
     ip_address: str
     agent_version: str
+
+    @field_validator("ip_address")
+    @classmethod
+    def validate_ip_address(cls, v: str) -> str:
+        try:
+            ipaddress.ip_address(v)
+        except ValueError:
+            raise ValueError(f"Invalid IP address: {v!r}")
+        return v
 
 class AgentRegisterResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -58,7 +68,7 @@ class LogEntry(BaseModel):
     message: str
 
 class LogBatchRequest(BaseModel):
-    entries: List[LogEntry]
+    entries: List[LogEntry] = Field(..., max_length=500)
 
 class LogResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

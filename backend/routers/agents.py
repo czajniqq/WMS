@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -14,7 +14,7 @@ def register_agent(payload: AgentRegisterRequest, db: Session = Depends(get_db))
     if existing:
         existing.ip_address = payload.ip_address
         existing.agent_version = payload.agent_version
-        existing.last_seen = datetime.utcnow()
+        existing.last_seen = datetime.now(timezone.utc)
         existing.status = "ONLINE"
         db.commit()
         db.refresh(existing)
@@ -23,8 +23,8 @@ def register_agent(payload: AgentRegisterRequest, db: Session = Depends(get_db))
         hostname=payload.hostname,
         ip_address=payload.ip_address,
         agent_version=payload.agent_version,
-        registered_at=datetime.utcnow(),
-        last_seen=datetime.utcnow(),
+        registered_at=datetime.now(timezone.utc),
+        last_seen=datetime.now(timezone.utc),
         status="ONLINE",
     )
     db.add(agent)
@@ -37,7 +37,7 @@ def heartbeat(agent_id: int, db: Session = Depends(get_db)):
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    agent.last_seen = datetime.utcnow()
+    agent.last_seen = datetime.now(timezone.utc)
     agent.status = "ONLINE"
     db.commit()
     return {"status": "ok"}

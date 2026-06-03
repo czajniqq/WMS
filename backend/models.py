@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, BigInteger, ForeignKey, Index
 from .database import Base
 
@@ -8,8 +8,8 @@ class Agent(Base):
     hostname = Column(String, unique=True, index=True, nullable=False)
     ip_address = Column(String, nullable=False)
     agent_version = Column(String, nullable=False)
-    registered_at = Column(DateTime, default=datetime.utcnow)
-    last_seen = Column(DateTime, default=datetime.utcnow)
+    registered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     status = Column(String, default="ONLINE")
 
 class Metric(Base):
@@ -35,14 +35,14 @@ class Log(Base):
     source = Column(String)
     event_id = Column(Integer)
     message = Column(Text)
-    received_at = Column(DateTime, default=datetime.utcnow)
+    received_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (Index("ix_logs_agent_event_time", "agent_id", "event_time"),)
 
 class Alert(Base):
     __tablename__ = "alerts"
     id = Column(Integer, primary_key=True, index=True)
     agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
-    triggered_at = Column(DateTime, default=datetime.utcnow)
+    triggered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     rule = Column(String, nullable=False)
     threshold = Column(Float)
     actual_value = Column(Float)

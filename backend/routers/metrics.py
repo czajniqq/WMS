@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -26,7 +26,7 @@ def submit_metrics(agent_id: int, payload: MetricPayload, db: Session = Depends(
         uptime_seconds=payload.uptime_seconds,
     )
     db.add(metric)
-    agent.last_seen = datetime.utcnow()
+    agent.last_seen = datetime.now(timezone.utc)
     db.commit()
     db.refresh(metric)
     evaluate(db, agent_id, payload.cpu_percent, payload.ram_percent)
@@ -37,7 +37,7 @@ def get_metrics(
     agent_id: int,
     from_time: Optional[datetime] = Query(None),
     to_time: Optional[datetime] = Query(None),
-    limit: int = Query(100),
+    limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
     agent = db.query(Agent).filter(Agent.id == agent_id).first()

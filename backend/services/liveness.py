@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from ..models import Agent
 from ..config import settings
 
 def check_liveness(db):
-    cutoff = datetime.utcnow() - timedelta(seconds=settings.AGENT_OFFLINE_TIMEOUT_SECONDS)
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=settings.AGENT_OFFLINE_TIMEOUT_SECONDS)
     offline_agents = db.query(Agent).filter(
         Agent.last_seen < cutoff,
         Agent.status == "ONLINE",
