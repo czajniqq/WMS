@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from backend.database import Base, get_db
 from backend.main import app
 from backend.models import Agent
-from datetime import datetime
+from datetime import datetime, timezone
 
 TEST_DATABASE_URL = "sqlite://"
 
@@ -47,8 +47,8 @@ def sample_agent(db_session):
         hostname="test-host",
         ip_address="192.168.1.1",
         agent_version="1.0.0",
-        registered_at=datetime.utcnow(),
-        last_seen=datetime.utcnow(),
+        registered_at=datetime.now(timezone.utc),
+        last_seen=datetime.now(timezone.utc),
         status="ONLINE",
     )
     db_session.add(agent)

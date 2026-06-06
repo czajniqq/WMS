@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 METRIC_PAYLOAD = {
-    "collected_at": datetime.utcnow().isoformat(),
+    "collected_at": datetime.now(timezone.utc).isoformat(),
     "cpu_percent": 50.0,
     "ram_percent": 60.0,
     "ram_used_mb": 4096.0,
