@@ -4,9 +4,9 @@ import ipaddress
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class AgentRegisterRequest(BaseModel):
-    hostname: str
-    ip_address: str
-    agent_version: str
+    hostname: str = Field(..., max_length=253)
+    ip_address: str = Field(..., max_length=45)
+    agent_version: str = Field(..., max_length=50)
 
     @field_validator("ip_address")
     @classmethod
@@ -62,10 +62,10 @@ class MetricResponse(BaseModel):
 
 class LogEntry(BaseModel):
     event_time: datetime
-    level: str
-    source: str
+    level: str = Field(..., max_length=20)
+    source: str = Field(..., max_length=260)
     event_id: int
-    message: str
+    message: str = Field(..., max_length=4096)
 
 class LogBatchRequest(BaseModel):
     entries: List[LogEntry] = Field(..., max_length=500)
