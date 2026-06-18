@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 LOG_BATCH = {
     "entries": [
-        {"event_time": datetime.utcnow().isoformat(), "level": "WARNING", "source": "System", "event_id": 1001, "message": "Test warning"},
-        {"event_time": datetime.utcnow().isoformat(), "level": "ERROR", "source": "Application", "event_id": 2001, "message": "Test error"},
+        {"event_time": datetime.now(timezone.utc).isoformat(), "level": "WARNING", "source": "System", "event_id": 1001, "message": "Test warning"},
+        {"event_time": datetime.now(timezone.utc).isoformat(), "level": "ERROR", "source": "Application", "event_id": 2001, "message": "Test error"},
     ]
 }
 
