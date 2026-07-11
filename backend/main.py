@@ -45,6 +45,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._calls = calls
         self._period = period
         self._buckets: dict = defaultdict(list)
+        self._request_count = 0
+        self._cleanup_interval = 1000  # prune stale keys every N requests
 
     async def dispatch(self, request: Request, call_next):
         client = request.client.host if request.client else "unknown"
@@ -54,6 +56,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if len(self._buckets[client]) >= self._calls:
             return JSONResponse({"detail": "Too many requests"}, status_code=429)
         self._buckets[client].append(now)
+        self._request_count += 1
+        if self._request_count >= self._cleanup_interval:
+            self._request_count = 0
+            stale = [ip for ip, ts in self._buckets.items() if not any(t > cutoff for t in ts)]
+            for ip in stale:
+                del self._buckets[ip]
         return await call_next(request)
 
 
@@ -91,7 +99,13 @@ async def lifespan(app: FastAPI):
     t.start()
     yield
 
-app = FastAPI(title="LAN Monitoring API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="LAN Monitoring API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None if settings.API_KEY else "/docs",
+    redoc_url=None if settings.API_KEY else "/redoc",
+)
 
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
